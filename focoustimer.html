@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Focus Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        body.light-theme {
+            --bg-primary: #f0f4f8;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f8f9fa;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-tertiary: #718096;
+            --border-color: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --mug-gradient: linear-gradient(to right, #f5f5f5 0%, #e0e0e0 50%, #f5f5f5 100%);
+            --mug-border: #333;
+        }
+
+        body.dark-theme {
+            --bg-primary: #000000;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-tertiary: #999999;
+            --border-color: #333;
+            --shadow: rgba(0, 0, 0, 0.8);
+            --mug-gradient: linear-gradient(to right, #f5f5f5 0%, #e0e0e0 50%, #f5f5f5 100%);
+            --mug-border: #333;
+        }
+
+        .container {
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px var(--shadow);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: 50px;
+            width: 60px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle-slider {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .dark-theme .theme-toggle-slider {
+            transform: translateX(30px);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .coffee-container {
+            position: relative;
+            width: 200px;
+            height: 240px;
+            margin: 30px auto;
+        }
+
+        .mug {
+            position: relative;
+            width: 160px;
+            height: 180px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 0 0 40px 40px;
+            border: 4px solid var(--mug-border);
+            border-top: none;
+            overflow: visible;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .mug::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 4px solid var(--mug-border);
+            border-bottom: none;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .handle {
+            position: absolute;
+            right: -55px;
+            top: 50px;
+            width: 55px;
+            height: 80px;
+            border: 5px solid var(--mug-border);
+            border-left: none;
+            border-radius: 0 50% 50% 0;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: inset -3px 0 8px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .handle::before {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            width: 35px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-left: none;
+            border-radius: 0 45% 45% 0;
+        }
+
+        .handle::after {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: 10px;
+            width: 10px;
+            height: 56px;
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.1), transparent);
+        }
+
+        /* Steam effect */
+        .steam {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 60px;
+            pointer-events: none;
+        }
+
+        .steam-line {
+            position: absolute;
+            width: 3px;
+            height: 50px;
+            background: linear-gradient(to top, rgba(200, 200, 200, 0.6), transparent);
+            border-radius: 50%;
+            animation: steam-rise 3s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        .steam-line:nth-child(1) {
+            left: 30px;
+            animation-delay: 0s;
+        }
+
+        .steam-line:nth-child(2) {
+            left: 48px;
+            animation-delay: 1s;
+        }
+
+        .steam-line:nth-child(3) {
+            left: 66px;
+            animation-delay: 2s;
+        }
+
+        @keyframes steam-rise {
+            0% {
+                transform: translateY(0) scaleX(1);
+                opacity: 0;
+            }
+            20% {
+                opacity: 0.6;
+            }
+            50% {
+                transform: translateY(-20px) scaleX(1.2);
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-50px) scaleX(0.8);
+                opacity: 0;
+            }
+        }
+
+        .coffee {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(to bottom, #8B4513 0%, #6F3609 100%);
+            transition: height 0.3s linear;
+            box-shadow: 0 -5px 15px rgba(139, 69, 19, 0.5);
+            border-radius: 0 0 36px 36px;
+        }
+
+        .coffee::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 5%;
+            right: 5%;
+            height: 8px;
+            background: rgba(139, 69, 19, 0.9);
+            border-radius: 50%;
+            animation: ripple 2s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(139, 69, 19, 0.6);
+        }
+
+        .coffee::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            width: 40px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            filter: blur(8px);
+        }
+
+        @keyframes ripple {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 0.6; }
+        }
+
+        .timer-display {
+            text-align: center;
+            font-size: 3.5em;
+            font-weight: bold;
+            color: var(--text-primary);
+            margin: 20px 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .history {
+            margin-top: 40px;
+            border-top: 2px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .history h2 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .history-list {
+            list-style: none;
+        }
+
+        .history-item {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-goal {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .history-duration {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.5s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        .notification-message {
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .timer-display {
+                font-size: 2.5em;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="theme-toggle" onclick="toggleTheme()">
+            <div class="theme-toggle-slider">
+                <span id="themeIcon">🌙</span>
+            </div>
+        </div>
+        <h1>☕ Focus Timer</h1>
+        
+        <div class="input-group">
+            <label for="goal">Focus Goal</label>
+            <input type="text" id="goal" placeholder="What are you working on?">
+        </div>
+
+        <div class="input-group">
+            <label for="duration">Duration (minutes)</label>
+            <input type="number" id="duration" min="1" max="120" value="25">
+        </div>
+
+        <div class="coffee-container">
+            <div class="steam">
+                <div class="steam-line"></div>
+                <div class="steam-line"></div>
+                <div class="steam-line"></div>
+            </div>
+            <div class="mug">
+                <div class="coffee" id="coffee"></div>
+                <div class="handle"></div>
+            </div>
+        </div>
+
+        <div class="timer-display" id="timer">25:00</div>
+
+        <div class="controls">
+            <button class="btn-primary" id="startBtn" onclick="startTimer()">Start</button>
+            <button class="btn-secondary" id="pauseBtn" onclick="pauseTimer()" disabled>Pause</button>
+            <button class="btn-secondary" id="resetBtn" onclick="resetTimer()">Reset</button>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-value" id="todaySessions">0</div>
+                <div class="stat-label">Today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="todayMinutes">0</div>
+                <div class="stat-label">Minutes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalSessions">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+
+        <div class="history">
+            <h2>Focus History</h2>
+            <ul class="history-list" id="historyList">
+                <li style="text-align: center; color: #999;">No sessions completed yet</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let totalSeconds = 0;
+        let remainingSeconds = 0;
+        let timerInterval = null;
+        let isRunning = false;
+        let isPaused = false;
+
+        const timerDisplay = document.getElementById('timer');
+        const goalInput = document.getElementById('goal');
+        const durationInput = document.getElementById('duration');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const coffee = document.getElementById('coffee');
+        const historyList = document.getElementById('historyList');
+        
+        // Stats elements
+        const todaySessionsEl = document.getElementById('todaySessions');
+        const todayMinutesEl = document.getElementById('todayMinutes');
+        const totalSessionsEl = document.getElementById('totalSessions');
+
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('focusTimerTheme') || 'dark';
+            document.body.className = savedTheme + '-theme';
+            updateThemeIcon();
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.className = newTheme + '-theme';
+            localStorage.setItem('focusTimerTheme', newTheme);
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const icon = document.getElementById('themeIcon');
+            icon.textContent = document.body.classList.contains('dark-theme') ? '🌙' : '☀️';
+        }
+
+        // Load stats from storage
+        function loadStats() {
+            const stats = JSON.parse(localStorage.getItem('focusTimerStats') || '{}');
+            const today = new Date().toDateString();
+            
+            if (stats.date !== today) {
+                stats.todaySessions = 0;
+                stats.todayMinutes = 0;
+                stats.date = today;
+            }
+            
+            stats.totalSessions = stats.totalSessions || 0;
+            
+            todaySessionsEl.textContent = stats.todaySessions || 0;
+            todayMinutesEl.textContent = stats.todayMinutes || 0;
+            totalSessionsEl.textContent = stats.totalSessions || 0;
+            
+            return stats;
+        }
+
+        function saveStats(stats) {
+            localStorage.setItem('focusTimerStats', JSON.stringify(stats));
+        }
+
+        function updateStats(duration) {
+            const stats = loadStats();
+            stats.todaySessions = (stats.todaySessions || 0) + 1;
+            stats.todayMinutes = (stats.todayMinutes || 0) + duration;
+            stats.totalSessions = (stats.totalSessions || 0) + 1;
+            stats.date = new Date().toDateString();
+            
+            saveStats(stats);
+            loadStats();
+        }
+
+        // Load history from storage
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('focusTimerHistory') || '[]');
+            if (history.length > 0) {
+                historyList.innerHTML = '';
+                history.slice(0, 10).forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'history-item';
+                    li.innerHTML = `
+                        <span class="history-goal">${item.goal}</span>
+                        <span class="history-duration">${item.duration} min</span>
+                    `;
+                    historyList.appendChild(li);
+                });
+            }
+        }
+
+        function saveToHistory(goal, duration) {
+            const history = JSON.parse(localStorage.getItem('focusTimerHistory') || '[]');
+            history.unshift({ goal, duration, timestamp: Date.now() });
+            localStorage.setItem('focusTimerHistory', JSON.stringify(history.slice(0, 50)));
+        }
+
+        function updateDisplay() {
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            const percentage = (remainingSeconds / totalSeconds) * 100;
+            coffee.style.height = `${percentage}%`;
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                const duration = parseInt(durationInput.value);
+                if (!duration || duration < 1) {
+                    alert('Please enter a valid duration');
+                    return;
+                }
+
+                totalSeconds = duration * 60;
+                remainingSeconds = totalSeconds;
+                isRunning = true;
+                isPaused = false;
+
+                startBtn.textContent = 'Resume';
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                durationInput.disabled = true;
+
+                updateDisplay();
+                runTimer();
+            } else if (isPaused) {
+                isPaused = false;
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                pauseBtn.textContent = 'Pause';
+                runTimer();
+            }
+        }
+
+        function runTimer() {
+            timerInterval = setInterval(() => {
+                remainingSeconds--;
+                updateDisplay();
+
+                if (remainingSeconds <= 0) {
+                    completeTimer();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            if (isRunning && !isPaused) {
+                clearInterval(timerInterval);
+                isPaused = true;
+                startBtn.disabled = false;
+                pauseBtn.textContent = 'Resume';
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            isPaused = false;
+            remainingSeconds = 0;
+            totalSeconds = 0;
+
+            const duration = parseInt(durationInput.value) || 25;
+            timerDisplay.textContent = `${String(duration).padStart(2, '0')}:00`;
+            coffee.style.height = '100%';
+
+            startBtn.textContent = 'Start';
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            pauseBtn.textContent = 'Pause';
+            durationInput.disabled = false;
+        }
+
+        function completeTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            isPaused = false;
+
+            const goal = goalInput.value || 'Untitled Session';
+            const duration = Math.floor(totalSeconds / 60);
+
+            addToHistory(goal, duration);
+            showNotification(goal, duration);
+
+            startBtn.textContent = 'Start';
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            durationInput.disabled = false;
+            
+            coffee.style.height = '0%';
+        }
+
+        function addToHistory(goal, duration) {
+            const firstItem = historyList.querySelector('li');
+            if (firstItem && firstItem.textContent.includes('No sessions')) {
+                historyList.innerHTML = '';
+            }
+
+            const li = document.createElement('li');
+            li.className = 'history-item';
+            li.innerHTML = `
+                <span class="history-goal">${goal}</span>
+                <span class="history-duration">${duration} min</span>
+            `;
+            historyList.insertBefore(li, historyList.firstChild);
+            
+            saveToHistory(goal, duration);
+            updateStats(duration);
+        }
+
+        function showNotification(goal, duration) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <div class="notification-title">🎉 Focus Session Complete!</div>
+                <div class="notification-message">You completed "${goal}" in ${duration} minutes</div>
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        durationInput.addEventListener('input', () => {
+            if (!isRunning) {
+                const duration = parseInt(durationInput.value) || 25;
+                timerDisplay.textContent = `${String(duration).padStart(2, '0')}:00`;
+            }
+        });
+
+        // Initialize on load
+        initTheme();
+        loadStats();
+        loadHistory();
+        updateDisplay();
+    </script>
+</body>
+</html>
